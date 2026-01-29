@@ -1,187 +1,238 @@
-🚀 Data Migration: EC2 (MariaDB) → AWS RDS (MariaDB)
+<!-- 🌈 TOP CLOUD MIGRATION BANNER -->
 
-🧭 Objective
+<p align="center">
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:141E30,50:243B55,100:141E30&height=240&section=header&text=EC2%20to%20RDS%20MariaDB%20Migration&fontSize=42&fontColor=ffffff&animation=fadeIn"/>
+</p>
 
-Migrate a MariaDB database from a Linux EC2 instance to an AWS RDS (MariaDB) instance — step by step, like a professional cloud engineer.
+---
 
-This guide simplifies the migration process with clear commands, visuals, and pro tips. Perfect for showcasing your AWS DevOps & Database migration skills.
+# 🚀 Data Migration: EC2 (MariaDB) → AWS RDS (MariaDB)
 
-🧩 Table of Contents
+<h3 align="center">Production Style Cloud Database Migration Guide</h3>
 
-✅ Prerequisites
+---
 
-💻 Create & Configure EC2 (Linux)
+<p align="center">
 
-🧱 Install MariaDB on EC2
+<img src="https://img.shields.io/badge/Cloud-AWS-orange?style=for-the-badge&logo=amazonaws"/>
+<img src="https://img.shields.io/badge/Database-MariaDB-blue?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/Migration-Production%20Style-green?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/DevOps-Cloud%20Engineer-red?style=for-the-badge"/>
 
-🧑‍💼 Create Database & Employee Table
+</p>
 
-💾 Backup (mysqldump)
+---
 
-☁️ Setup AWS Networking for RDS
+# 🌟 Project Vision
 
-🗄️ Create RDS (MariaDB)
+This project demonstrates **real-world database migration** from a self-managed MariaDB running on EC2  
+to a fully managed AWS RDS MariaDB instance.
 
-📤 Restore Backup into RDS
+This simulates how enterprise cloud teams move workloads from VM-based databases to managed cloud services.
 
-🔍 Verify Migration
+---
 
-🧹 Cleanup & Tips
+# 🧭 Migration Objective
 
+✔ Backup database from EC2  
+✔ Transfer data safely  
+✔ Restore into AWS RDS  
+✔ Validate migration integrity  
+✔ Apply cloud security best practices  
 
-✅ 1. Prerequisites
+---
 
-Before starting, ensure you have:
+# 🏗️ Full Migration Architecture
 
-AWS account with EC2 and RDS permissions.
+```mermaid
+flowchart LR
+    A[EC2 MariaDB Source] --> B[Backup SQL File]
+    B --> C[AWS RDS MariaDB]
+    A --> D[EC2 Security Group]
+    C --> E[RDS Security Group]
+```
 
-AWS CLI configured → aws configure
+---
 
-SSH key pair to access your EC2.
+# ☁ Cloud Infrastructure View
 
-Basic understanding of MySQL/MariaDB.
+```mermaid
+flowchart TD
+    User --> EC2
+    EC2 --> MariaDB
+    EC2 --> mysqldump
+    mysqldump --> BackupFile
+    BackupFile --> RDS
+```
 
-💡 Pro Tip: Always keep your DB credentials secure using AWS Secrets Manager.
+---
 
-💻 2. Create & Configure EC2 (Linux)
-🧠 Step: Launch EC2 instance
+# ✅ Prerequisites
 
-AMI: Ubuntu Server 22.04 LTS (or Amazon Linux 2023)
+✔ AWS Account  
+✔ EC2 + RDS Permissions  
+✔ AWS CLI Configured  
+✔ SSH Key Pair  
+✔ Basic MariaDB Knowledge  
 
-Instance type: t3.micro (Free-tier eligible)
+💡 Pro Tip → Use AWS Secrets Manager for DB credentials.
 
-Ports: Allow SSH (22) from your IP
+---
 
-SSH into EC2:  ssh -i my-key.pem ubuntu@<EC2_PUBLIC_IP>
+# 💻 Step 1 — Launch EC2 (Linux)
 
+Ubuntu 22.04 OR Amazon Linux 2023  
+Instance: t3.micro  
+Security: Allow SSH (22)
 
-🔐 Configure Security Group
+SSH Login:
 
-Allow inbound SSH (22) and later, allow RDS access (3306) from EC2.
+```bash
+ssh -i my-key.pem ubuntu@EC2_PUBLIC_IP
+```
 
+---
 
-🧱 3. Install MariaDB on EC2
+# 🧱 Step 2 — Install MariaDB
 
-
-sudo apt update && sudo apt install mariadb-server mariadb-client -y
+```bash
+sudo apt update
+sudo apt install mariadb-server mariadb-client -y
 sudo systemctl enable --now mariadb
 sudo mysql_secure_installation
+```
 
-✅ Verify: sudo systemctl status mariadb
+Verify:
 
-🧑‍💼 4. Create Database & Employee Table
+```bash
+systemctl status mariadb
+```
 
-Log in to MariaDB: sudo mysql -u root -p
+---
 
-Create Database, User & Table
+# 🧑‍💼 Step 3 — Create Database & Table
 
+```sql
 CREATE DATABASE employee_db;
+
 CREATE USER 'emp_user'@'%' IDENTIFIED BY 'EmpUserPassword123!';
 GRANT ALL PRIVILEGES ON employee_db.* TO 'emp_user'@'%';
 FLUSH PRIVILEGES;
 
-
 USE employee_db;
 
-
-CREATE TABLE employee (
-id INT AUTO_INCREMENT PRIMARY KEY,
-first_name VARCHAR(50),
-last_name VARCHAR(50),
-email VARCHAR(100),
-department VARCHAR(50),
-hire_date DATE,
-salary DECIMAL(10,2)
+CREATE TABLE employee(
+ id INT AUTO_INCREMENT PRIMARY KEY,
+ first_name VARCHAR(50),
+ last_name VARCHAR(50),
+ email VARCHAR(100),
+ department VARCHAR(50),
+ hire_date DATE,
+ salary DECIMAL(10,2)
 );
+```
 
+---
 
-INSERT INTO employee (first_name, last_name, email, department, hire_date, salary) VALUES
-('Asha', 'Kumar', 'asha.kumar@example.com', 'Engineering', '2023-04-01', 55000.00),
-('Ravi', 'Sharma', 'ravi.sharma@example.com', 'HR', '2022-09-15', 42000.00);
+# 💾 Step 4 — Backup Database
 
-🧾 Check data: SELECT * FROM employee;
-
-💾 5. Take Backup (mysqldump)
-
+```bash
 mysqldump -u root -p employee_db > employee_db_backup.sql
+```
 
-📂 Transfer to local or keep on EC2 for direct restore.
+---
 
-☁️ 6. Setup AWS Networking for RDS
+# ☁ Step 5 — Setup RDS Networking
 
 Create:
 
-VPC (if not already available)
+✔ DB Subnet Group  
+✔ RDS Security Group  
+✔ Allow Port 3306 from EC2 SG  
 
-DB Subnet Group (2+ private subnets)
+---
 
-Security Group allowing port 3306 inbound
+# 🗄 Step 6 — Create RDS MariaDB
 
-aws ec2 create-security-group --group-name rds-sg --description "RDS MariaDB SG" --vpc-id <VPC_ID>
-aws ec2 authorize-security-group-ingress --group-id <SG_ID> --protocol tcp --port 3306 --source-group <EC2_SG_ID>
-
-🔒 Only allow trusted sources to connect (your EC2 or local IP).
-
-
-🗄️ 7. Create RDS (MariaDB)
-
-Use AWS Console or CLI:
-
+```bash
 aws rds create-db-instance \
 --db-instance-identifier my-mariadb-rds \
 --allocated-storage 20 \
 --db-instance-class db.t3.micro \
 --engine mariadb \
 --master-username admin \
---master-user-password 'RdsAdminPass123!' \
---vpc-security-group-ids <RDS_SG_ID> \
+--master-user-password RdsAdminPass123! \
 --publicly-accessible true
+```
 
-Wait until status = available.
+---
 
-Retrieve endpoint:
+# 📤 Step 7 — Restore Backup to RDS
 
-aws rds describe-db-instances --db-instance-identifier my-mariadb-rds --query 'DBInstances[0].Endpoint.Address' --output text
+```bash
+mysql -h RDS_ENDPOINT -u admin -p employee_db < employee_db_backup.sql
+```
 
-📤 8. Restore Backup into RDS
+---
 
-💡 If connection fails, check RDS security group inbound rules and ensure EC2 can reach the endpoint.
+# 🔍 Step 8 — Verify Migration
 
-🔍 9. Verify Migration
+```sql
+SELECT * FROM employee;
+```
 
-✅ You should see the same employee rows that were present on EC2.
+---
 
-🎯 Congratulations — Migration Complete!
+# 🎯 Migration Flow (Sequence View)
 
-🧹 10. Cleanup & Pro Tips
+```mermaid
+sequenceDiagram
+    EC2->>MariaDB: Source Database
+    EC2->>Backup: mysqldump Export
+    Backup->>RDS: Import SQL
+    RDS->>User: Data Available
+```
 
-Terminate EC2 if no longer needed.
+---
 
-Restrict or delete RDS security rules.
+# 🧹 Cleanup & Best Practices
 
-Store backups in Amazon S3 for durability.
+✔ Delete unused EC2  
+✔ Restrict RDS Security Group  
+✔ Store backup in S3  
+✔ Enable RDS Auto Backup  
 
-Automate using AWS DMS or CloudFormation for large-scale setups.
+---
 
-⚙️ Pro Tip: Use AWS DMS (Database Migration Service) for production-grade replication and continuous syncs.
+# 🧠 Production Tips
 
-📘 Summary Flow Diagram
+🔥 Use AWS DMS for Live Migration  
+🔥 Use Multi-AZ RDS  
+🔥 Enable Performance Insights  
+🔥 Enable Encryption  
 
-graph TD;
-A[EC2: MariaDB Source] -->|mysqldump| B[Backup SQL File];
-B -->|mysql import| C[RDS: MariaDB Destination];
-A --> D[Security Group: SSH 22];
-C --> E[Security Group: MySQL 3306];
-E -->|Connected| A;
+---
 
-Author: Arkan Tandel 🧠
-email : arkantandel@gmal.com
-Project: Data Migration from EC2 → RDS
-GitHub: https://github.com/arkantandel
+# 👨‍💻 Author
 
-🌟 “Migration isn’t magic — it’s mastering the flow of data.”
+**Arkan Tandel**  
+Cloud & DevOps Engineer 🚀  
 
+GitHub: https://github.com/arkantandel  
+Email: arkantandel@gmail.com  
 
+---
 
+# ❤️ Cloud Engineering Quote
 
+> Migration isn’t magic.  
+> It’s mastering the controlled movement of data across systems.
+
+---
+
+<!-- FOOTER BANNER -->
+
+<p align="center">
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:243B55,50:141E30,100:243B55&height=120&section=footer"/>
+</p>
 
